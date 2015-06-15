@@ -19,25 +19,62 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <stddef.h>
-#include <stdint.h>
-
-extern "C" {
-#include "c_types.h"
-#include "eagle_soc.h"
-#include "ets_sys.h"
-#include "osapi.h"
-}
-
-const int ONCE   = 0;
-const int REPEAT = 1;
+#include "ESP8266WiFi.h"
+#include "WiFiClient.h"
+#include "WiFiServer.h"
+#include "PubSubClient.h"
+#include "Ticker.h"
+  
 
 #include "CMMC.h"
 
-CMMC::CMMC()
-: _timer(0)
+CMMC::CMMC() 
 {
 }
+
+
+
+void CMMC::callback(const MQTT::Publish& pub)
+{
+    // MQTT SUBSCRIBE
+    if (pub.payload_string() == "0")
+    {
+        DEBUG_PRINTLN("GOT STRING 0...");
+    }
+    else if (pub.payload_string() == "1")
+    {
+        DEBUG_PRINTLN("GOT STRING 1..");
+    }
+    else
+    {
+        DEBUG_PRINT(pub.topic());
+        DEBUG_PRINT(" => ");
+        DEBUG_PRINTLN(pub.payload_string());
+    }
+}
+
+
+char* CMMC::getClientId()
+{
+    uint8_t mac[6];
+    WiFi.macAddress(mac);
+    String result;
+    for (int i = 0; i < 6; ++i)
+    {
+        result += String(mac[i], 16);
+        if (i < 5)
+            result += ':';
+    }
+
+    uint8_t len = strlen(CLIENT_ID_PREFIX);
+    char* buff = (char* )malloc(len+result.length()+1);
+    memcpy(buff, CLIENT_ID_PREFIX, len);
+    strcpy(buff+len, (char*)result.c_str());
+
+    return buff;
+}
+
+
 
 CMMC::~CMMC()
 {
